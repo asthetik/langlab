@@ -15,37 +15,41 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         })
         .collect();
-    let mut handles = vec![];
+
     const CHUNK_SIZE: usize = 5;
     let chunks = files.chunks(CHUNK_SIZE);
-    for chunk in chunks {
-        let mut local_map = HashMap::new();
-        let chunk = chunk.to_vec();
-        let handle = thread::spawn(move || {
-            chunk
-                .iter()
-                .filter_map(|p| fs::read_to_string(p).ok())
-                .for_each(|text| {
-                    text.split_whitespace().for_each(|w| {
-                        let word = w
-                            .trim_matches(|c: char| c.is_ascii_punctuation())
-                            .to_lowercase();
-                        if !word.is_empty() {
-                            *local_map.entry(word).or_insert(0) += 1;
-                        }
-                    });
-                });
-            local_map
-        });
-        handles.push(handle);
-    }
 
-    for h in handles {
-        let local_map = h.join().unwrap();
-        for (k, v) in local_map {
-            *map.entry(k).or_insert(0) += v;
+    thread::scope(|s| {
+        let mut handles = vec![];
+        for chunk in chunks {
+            let mut local_map = HashMap::new();
+            let chunk = chunk.to_vec();
+            let handle = s.spawn(move || {
+                chunk
+                    .iter()
+                    .filter_map(|p| fs::read_to_string(p).ok())
+                    .for_each(|text| {
+                        text.split_whitespace().for_each(|w| {
+                            let word = w
+                                .trim_matches(|c: char| c.is_ascii_punctuation())
+                                .to_lowercase();
+                            if !word.is_empty() {
+                                *local_map.entry(word).or_insert(0) += 1;
+                            }
+                        });
+                    });
+                local_map
+            });
+            handles.push(handle);
         }
-    }
+
+        for h in handles {
+            let local_map = h.join().unwrap();
+            for (k, v) in local_map {
+                *map.entry(k).or_insert(0) += v;
+            }
+        }
+    });
 
     println!("Map count: {}", map.len());
 
