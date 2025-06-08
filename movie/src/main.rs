@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use movie::handler::{handle_login, handle_logout};
+use movie::handler::{handle_list, handle_login, handle_logout};
 
 #[derive(Parser)]
 #[command(version, about = "Movie app", long_about = "Movie information app")]
@@ -18,6 +18,8 @@ enum Commands {
     },
     /// Log out
     Logout,
+    /// List all the movies
+    List,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -25,6 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match &cli.commands {
         Some(Commands::Login { username }) => handle_login(username)?,
         Some(Commands::Logout) => handle_logout(),
+        Some(Commands::List) => handle_list()?,
         _ => println!("No command provided or command not recognized"),
     }
 
