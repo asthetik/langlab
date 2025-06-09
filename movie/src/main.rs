@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use movie::handler::{handle_add, handle_list, handle_login, handle_logout};
+use movie::handler::{handle_add, handle_list, handle_login, handle_logout, handle_delete};
 
 #[derive(Parser)]
 #[command(version, about = "Movie app", long_about = "Movie information app")]
@@ -38,6 +38,16 @@ enum Commands {
         #[arg(short, long)]
         remark: Option<String>,
     },
+    /// Delete a movie
+    Delete {
+        /// The disc no. of the movie
+        #[arg(short, long)]
+        disc: usize,
+
+        /// The index of the movie in the disc
+        #[arg(short, long)]
+        index: usize
+    },
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -52,6 +62,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             title,
             remark,
         }) => handle_add(*disc, year, title, remark)?,
+        Some(Commands::Delete { disc, index }) => handle_delete(disc, index)?,
         _ => println!("No command provided or command not recognized"),
     }
 
